@@ -1,0 +1,107 @@
+/*
+
+ b batch file for maxima
+
+
+
+There are 2 complex planes :
+* w-plane 
+* z-plane 
+
+
+1 step transformation from w plane go to z plane using z=h(w)
+
+
+ 
+*/
+
+kill(all);
+remvalue(all);
+
+
+/*
+
+*/
+
+
+
+iMax:100; /* number of points to draw */
+wxMin: -20;
+wxMax: -2;
+wxStep: (wxMax-wxMin)/iMax;
+
+
+/* =================== functions ============ */
+
+log2(x) := log(x) / log(2);
+/* computes w from wx 
+GCarleson , Gamelin: Complex Dynamics, Springer, 1993, page 36
+*/
+fw(wx):=10*log(abs(wx));
+
+h(w):=-1/w;
+
+
+/* converts complex number into list for draw package  */
+ draw_format(z):= [float(realpart(z)),float(imagpart(z))];
+
+
+
+compile(all);
+
+
+
+/* ============== compute ===============  */
+
+/* point to point method of drawing 
+ compute first point of curve, create list and save point to this list */
+
+C: 11-fw(-2)$
+ 
+ wList:[]; 
+ 
+ wy: C $
+ for wx:wxMin step wxStep  while (wx< wxMax+wxStep) do
+  (  
+     wy:C+fw(wx),
+     wList:cons(wx+wy*%i,wList),  
+     wList:cons(wx-wy*%i,wList)
+ )$
+
+ zList:map(h,wList)$
+
+/* convert list to draw format */
+
+ wList:map(draw_format,wList)$ 
+ zList:map(draw_format,zList)$ 
+
+/* =================  draw ======================================*/
+
+path:"~/maxima/batch/julia/parabolic/z2z/"$ /* pwd  */
+ FileName:"a"$ /* without extension which is the terminal name */
+
+ load(draw); /* Mario Rodríguez Riotorto   http://www.telefonica.net/web2/biomates/maxima/gpdraw/index.html */
+ draw(
+  terminal  = 'svg,
+  file_name = concat(path,FileName),
+  columns  = 2,
+  dimensions=[1000,500], /*  x = y*columns  */
+  
+  gr2d(title = " w plane ",
+   /* xrange = [0,3],  */
+   points_joined =false,
+   color         = green,
+   point_size    = 0.5,
+   point_type = filled_circle,
+   points(wList)
+   ),
+
+  gr2d(title = " z plane",
+   /* xrange = [0,3],  */
+   points_joined =false,
+   color         = red,
+   point_size    = 0.5,
+   point_type = filled_circle,
+   points(zList))
+
+ );

@@ -1,0 +1,96 @@
+/*
+
+c = -0.75
+"z = -0.5
+"m(z)=1.0
+"z = -0.5
+"m(z)=1.0
+
+*/
+
+
+
+kill(all);
+remvalue(all);
+
+/* basic funtion  = monic and centered complex quadratic polynomial 
+http://en.wikipedia.org/wiki/Complex_quadratic_polynomial
+
+*/
+f(z,c):=z*z+c $
+
+/* iterated function */
+fn(n, z, c) :=
+    if n=1 	then f(z,c)
+			else f(fn(n-1, z, c),c) $
+/* roots of Fn are periodic point of  fn function */
+Fn(n,z,c):=fn(n, z, c)-z $
+
+/* gives irreducible divisors of polynomial Fn[p,z,c] 
+which roots are periodic points of period p */
+G[p,z,c]:=
+block(
+ 
+ [f:divisors(p),t:1],
+ g,
+ f:delete(p,f),
+ if p=1 
+	then return(Fn(p,z,c)),
+ for i in f do t:t*G[i,z,c],
+ g: Fn(p,z,c)/t,  
+ return(ratsimp(g))
+  )$
+  
+  
+  
+/* use :
+roots:GiveRoots_bf(G[3,z,c]);
+*/
+GiveRoots_bf(g):=
+block(
+ 
+ [cc],
+ cc:bfallroots(expand(g)=0),
+ cc:map('rhs,cc),/* remove string "c=" */
+ return(cc)
+  )$ 
+
+
+compile(all)$
+
+
+
+p:8; /* period of z-cycle */
+/* G should be found when c is variable without value */
+eq:G[p,z,c]$  
+
+
+ 
+/* multiplier */ 
+define(m(z),diff(fn(p,z,c),z,1))$
+
+c:-1.36809742955000002314;
+
+
+
+/* periodic points */
+
+roots:GiveRoots_bf(ev(eq))$ /* ev puts value instead of c symbol */
+/* multiplier of periodic points */
+print(" attracting roots ")$
+for z in roots do 
+( s: cabs(float(m(z))),
+  if (s<=1.0) then print("z = ", float(z),"m(z)=", s)
+)$
+
+print(" repelling roots ")$
+for z in roots do 
+( s: cabs(float(m(z))),
+  if (s>1.0) then print("z = ", float(z),"m(z)=", s)
+)$
+
+length(roots);
+
+
+
+

@@ -1,0 +1,206 @@
+kill(all);
+remvalue(all);
+
+
+/*------------- functions definitions ---------*/
+
+/* function */
+f(z):=z+m*z^d ;
+
+
+
+GiveListOfCriticalPoints(fun):=
+block(
+  [d,s],
+  /* derivative */
+  d:diff(fun,z,1),
+  /* critical points z: d=0 */
+  s:solve(d=0,z),
+  /* remove "z="  from list s */
+  s:map('rhs,s),
+  /* convert to form x+y*%i */
+  s:map('rectform,s),
+  s:map('float,s),
+  return(s)
+)$
+
+
+
+/* f(z) is used as a global function
+   I do not know how to put it as a argument */
+
+GiveOrbit(z0,OrbitLength):=
+block(
+ [z,Orbit],
+ z:z0,
+ Orbit:[[realpart(z),imagpart(z)]], 
+ for i:1 thru OrbitLength step 1 do
+        ( z:expand(f(z)),
+          Orbit:endcons([realpart(z),imagpart(z)],Orbit)),
+         
+ return(Orbit) 
+
+)$
+
+/* find fixed points  returns a list */
+GiveFixedPoints():= block
+(
+  [s],
+  s:solve(f(z)=z),
+  /* remove "z="  from list s */
+  s:map('rhs,s),
+  s:map('rectform,s),
+  s:map('float,s),
+  return(s)
+)$
+
+
+/* 
+riotorto.users.sourceforge.net/gnuplot/vectors/index.html 
+vector from m to origin 
+*/
+GiveAVector(m):=block(
+ [x,y,dx,dy],
+ x:0,
+ y:0,
+ dx:realpart(m),
+ dy:imagpart(m),
+ 'vector([dx,dy],[-dx,-dy])
+)$
+
+
+
+ComputeAVector(A):=block(
+ [v],
+ v:solve(A=-1),
+ v:map('rhs,v),
+ v:map('rectform,v),
+ v:map('float,v),
+ v:map('GiveAVector,v)
+
+)$
+
+
+/* vector from origin to m */
+GiveRVector(m):=block(
+ [x,y,dx,dy],
+ x:0,
+ y:0,
+ dx:realpart(m),
+ dy:imagpart(m),
+ 'vector([x,y],[dx,dy])
+)$
+
+
+
+ComputeRVector(A):=block(
+ [v],
+ v:solve(A=1),
+ v:map('rhs,v),
+ v:map('rectform,v),
+ v:map('float,v),
+ v:map('GiveRVector,v)
+
+)$
+
+compile(all);
+
+/* -----const values -------  */
+
+p:1;
+q:2;
+d:12; /* degree of polynomial */
+
+
+/* ------------- main  = computations -----------------*/
+
+/* multiplier of fixed point = coefficient of function f  */
+m:float(rectform(exp(2*%pi*%i*p/q)));
+
+
+petals:d-1; /* number of petals is related with degree  */
+
+B:m*z^(d-1);
+
+/*  */
+/* attracting vectors */
+va:ComputeAVector(B)$
+
+/* repelling vectors */
+vr:ComputeRVector(B)$
+
+
+
+
+
+iLength:3000*petals;
+s:GiveListOfCriticalPoints(f(z));
+multiplicities;
+length(s);
+
+
+Orbits:[];
+for i:1 thru length(s) step 1 do
+(
+ Orbit:GiveOrbit(s[i],iLength),
+ Orbits:append(Orbit,Orbits)
+);
+
+/*--------------   draw     ----------------------------*/
+
+load(draw); /* ( interface to gnuplot ) by Mario Rodriguez Riotorto http://www.telefonica.net/web2/biomates */
+
+
+path:"~/maxima/batch/julia/parabolic/zmz2/zmz2/"$ /* pwd  */
+FileName:"p"$ /* without extension which is the terminal name */
+
+
+draw2d(
+    title = concat("Critical orbit for f(z)=z+mz^d where m= ", string(m), " d=", string(d)," p/q=", string(p/q)),
+    terminal  = svg,
+     user_preamble = "set size square", /*    */
+    file_name = concat(path,FileName,string(petals)),
+    dimensions  = [1000,1000],   /* Since Maxima 5.23, pic_width and pic_height are deprecated. */
+    /* yrange = [-0.6,0.6],
+    xrange = [-0.6,0.6],*/
+    xlabel     = "z.re ",
+    ylabel     = "z.im",
+
+    /* vectors */
+    head_both   = false,
+    head_length = 0.000001,
+    line_width  = 1.5,
+    
+    head_angle  = 1,
+    head_type = nofilled,
+    line_type = dots,
+    key = "attracting vectors",
+    color       = yellow,
+    first(va),
+    key="",
+    rest(va),
+    key = "repelling vectors",
+    color = gray,
+    first(vr),
+    key="",
+    rest(vr),
+    
+    point_type    = filled_circle,
+    points_joined = false,
+    point_size    = 0.5,
+   
+    key=" critical orbit ",
+    color             =red,
+    points(Orbits),
+   
+    point_size    = 1.2,
+    key= "critical points",
+    color           = blue,
+    points(map(realpart,s),map(imagpart,s)),
+
+    key= "fixed parabolic point",
+    color           = black,
+    points([[0,0]])
+
+ );
+

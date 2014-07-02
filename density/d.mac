@@ -1,0 +1,79 @@
+kill(all);
+remvalue(all);
+
+
+c:   -1.4011551890;
+zMax :  0.7;
+zMin : -1.5;
+dz: zMax-zMin;
+ihMax : 2000;
+zWidth : dz/ihMax;
+
+iMax:5000; /* number of iterations  */
+
+
+/* structures for results */
+hImpulses:[]; /* density */
+xTics:[]; /* x-axis tics for the image */
+hs : make_array(fixnum,ihMax); /* array, The subscripts for the dimension are the integers running from 0 to ihMax */
+
+
+
+
+
+/* ---------------- compute ---------------------------- */
+
+
+ z: 0.0; /* critical point is a initial point for critical orbit */
+ ih: floor((z-zMin)/zWidth); /* index of histogram  array */
+ hs[ih]:hs[ih]+1;
+
+
+ for i:1 thru iMax  /*while (abs(z)<2)*/ do 
+         (    
+           z: z * z+c, /*  */
+           ih: floor((z-zMin)/zWidth),
+           hs[ih]:hs[ih]+1
+         );
+
+/* from array hs  to list hImpulses for draw package */
+for ih :0 thru ihMax do hImpulses:cons([ih,hs[ih]], hImpulses);
+
+
+for z:zMin step 0.5  thru zMax do xTics:cons([z,floor((z-zMin)/zWidth)],xTics);
+xTics:setify(xTics); /* convert array to set, because tics need to be a set */
+
+
+
+
+/* =================  draw ======================================*/
+
+load(draw);
+
+
+path:"~/maxima/batch/density/"$ /* pwd  */
+FileName:string(c)$ /* without extension which is the terminal name */
+
+draw2d(
+  title      = concat(" Histogram of critical orbit  z[i+1] = z[i]*z[i] ",string(c)),
+  xlabel     = "z",
+  ylabel     = "density ",
+  xtics	     = xTics,
+  xtics_rotate = true,
+  /* logy=true,  y range must be greater than 0 for log scale */
+  yrange=[0,200], 
+  terminal  = 'svg,
+  file_name = concat(path,FileName),
+  dimensions=[1000,1000], /*   */
+  points_joined = impulses,
+  line_width    = 2,
+  color         = "blue",
+  points(hImpulses) )$
+
+
+
+
+
+
+
+

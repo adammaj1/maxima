@@ -1,0 +1,102 @@
+
+ /* 
+ batch file for maxima
+ conformal mapping from :
+ the  circle with center=0 and radius=1
+ given by equation : abs(c)=1
+ where : c:x+y*%i=cos(t)+%i*sin(t)  
+ onto 
+ cardioid ( boundary of main hyperbolic component of Mandelbrot set
+ is given by equation:
+ c:w-w*w;
+
+
+
+ based on :Conformal Mappings And The Area Of The Mandelbrot Set by David Allingham page 18
+ http://www.eng.warwick.ac.uk/staff/doa/reports/allingham-thesis1995.pdf
+ */ 
+
+kill(all);
+remvalue(all);
+
+
+/* 
+ circle D={w:abs(w)=1 } where w=l(t) 
+ t is angle in turns ; 1 turn = 360 degree = 2*Pi radians 
+ */
+ l(t):=float(%e^(%i*t*2*%pi)/2);
+
+
+ /* conformal map */
+ f(z):=float(rectform((1-(z+1)^2)/4));
+
+
+compile(all);
+
+
+ iMax:10; /* number of points to draw */
+ dt:1/iMax;
+
+
+ 
+ /* point to point method of drawing */
+ t:0; /* angle in turns */
+ 
+ /* compute first point of curve, create list and save point to this list */
+ 
+
+
+/* point of unit circle   w:l(t); */
+ w:float(rectform(ev(l(t), numer))); 
+ circleList:makelist (w, j, 1, 1); 
+ for i:1 thru iMax step 1 do
+ block
+ (t:t+dt,
+ w:float(rectform(ev(l(t), numer))), 
+ circleList:cons(w,circleList)
+ );
+
+
+ /* convert one list into 2 lists */
+ xxCircle:[]; /* map(realpart, circleList); */
+ yyCircle:[]; /* map(imagpart, circleList); */
+
+
+ /* conformal mapping from  circle to cardioid */
+ cardioidList: map(f, circleList);
+
+
+	
+ /* convert one list into 2 lists */
+ xxCardioid:[];/* map(realpart, cardioidList);*/
+ yyCardioid:[]; /* map(imagpart, cardioidList); */
+
+
+
+
+ load(draw); /* Mario Rodríguez Riotorto   http://www.telefonica.net/web2/biomates/maxima/gpdraw/index.html */
+ draw(
+  /* file_name = "~/maxima/batch/mandelbrot/unroll/b.svg", */
+  dimensions=[1000,500] 
+  /* terminal  = svg, */
+  columns  = 3,
+  gr2d(title = " circle D={w:abs(2*w)=1 } ",
+
+   points_joined =true,
+   color         = red,
+   point_type = 0,
+   points(xxCircle,yyCircle)),
+
+  gr2d(title      = "cardioid {c: c =  } ",
+   points_joined =true,
+   color         = blue,
+   point_type = 0,
+   points(xxCardioid,yyCardioid)),
+
+   gr2d(title      = "cardioid {c: c =  } ",
+   points_joined =true,
+   color         = blue,
+   point_type = 0,
+   points(xxCardioid,yyCardioid))  
+ );
+

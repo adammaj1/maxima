@@ -1,0 +1,148 @@
+/*
+
+ b batch file for maxima
+
+ 
+*/
+
+kill(all);
+remvalue(all);
+
+
+/*
+(%i29) print(i0,d0)
+6979
+(%o29) .005999698065778325
+(%i30) print(i,d)
+6979
+.0059996985
+65778325
+.005999706179974029
+(%o30) .005999706179974029
+(%i31) print(d-d0)
+8.114195704234106*10^−9
+*/
+
+PeriodChild : 2;
+iMax : 1000;
+PixelHeight:0.003;
+AR: .0059996985 ; /* 2*PixelHeight; */
+zcr:0.0; /* critical point */
+dd0:[]; 
+dd1:[]; 
+
+
+
+/* =================== functions ============ */
+
+/* http://en.wikipedia.org/wiki/Complex_quadratic_polynomial  */
+f(z,c):=rectform(z*z+c);
+
+
+/* point of period 1 component of Mandelbrot set 
+t = internal angle in turns : from 0 to 1
+r = radius ; 1.0 gives boundary point; 0.0 = center 
+*/
+GiveC(t,r):=
+block(
+ [w, e],
+ w:r*%e^(%i*t*2*%pi),
+ e:w/2-w*w/4,
+ return(float(rectform(e)))
+)$
+
+
+
+/* converts complex number into list for draw package  */
+ draw_format(z):= [realpart(z),imagpart(z)];
+
+/* find fixed point alfa of function f(z,c)   */
+GiveFixed(c):= float(rectform((1-sqrt(1-4*c))/2))$
+
+
+/* gives distance between 2 complex points on plane */
+GivePlaneDistance(z1,z2):=float(abs(z2-z1))$
+
+compile(all);
+
+
+
+/* ============== compute ===============  */
+
+/*  */
+  
+ c:GiveC(1/PeriodChild,1.0);
+ a: GiveFixed(c); /* alfa fixed point */
+
+
+ /* first point is a critical point */
+ i:0;
+ z: zcr;
+ d:GivePlaneDistance(z,a);
+ dd0:cons([i,d],dd0);
+ 
+ while ( d>AR) do
+  (  for p:1 thru PeriodChild do z:f(z,c),
+     d:GivePlaneDistance(z,a),
+     i:i+1,
+     dd0:cons([i,d],dd0)
+     
+ );
+d0:d;
+i0:i;
+
+ 
+
+ /* secend  point is near critical point */
+ i:0;
+ z: zcr+%i*PixelHeight*10;
+ d:GivePlaneDistance(z,a);
+ dd1:cons([i,d],dd1);
+ 
+ while ( d>AR) do
+  (  for p:1 thru PeriodChild do z:f(z,c),
+     d:GivePlaneDistance(z,a),
+     i:i+1,
+     dd1:cons([i,d],dd1)
+     
+ );
+
+
+print(i0,d0)$
+print(i,d)$
+print(d-d0)$
+print(d0-(d0-d)/2)$
+ 
+
+
+/* =================  draw ======================================*/
+
+path:"~/maxima/batch/normalisatio/"$ /* pwd  */
+ FileName:"a"$ /* without extension which is the terminal name */
+
+ load(draw); /* Mario Rodríguez Riotorto   http://www.telefonica.net/web2/biomates/maxima/gpdraw/index.html */
+
+ draw2d(
+  terminal  = 'svg,
+  file_name = concat(path,FileName),
+  dimensions=[1000,333], 
+  yrange = [-0.1,0.5],
+  xlabel = "i",
+  ylabel = "distance",
+  title = " distance to alfa from critical orbit  ",
+  color = red,
+  explicit(AR,x,0,iMax),
+  
+   points_joined =true,
+   color         = green,
+   point_size    = 0.3,
+   point_type = filled_circle,
+   points(dd0),
+   color = blue,
+   points(dd1)
+     
+ 
+
+ );
+
+

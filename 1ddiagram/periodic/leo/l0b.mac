@@ -1,0 +1,84 @@
+kill(all);
+remvalue(all);
+display2d:false$
+load(functs); /* for lcm  = least common multiple of its arguments */
+
+
+
+/* 
+
+
+Adam, if I understand your code, you solve for a periodic point z as a
+function of the parameter c. An alternative is to solve for c as a
+function of z. This has a 2-fold advantage: 1. where the bifurcations
+occur, you see vertical tangents in z vs. c, with a consequent loss of
+resolution (few data points on each branch)--these vertical tangents
+become horizontal in c vs. z so there is no loss of resolution; 2. As
+a polynomial in c, the degree is half that of the degree in z, which
+should speed calculations.
+
+It may seem weird to treat the parameter as the dependent variable,
+but this is a standard trick in the analysis of bifurcations.
+
+Leo Butler
+
+This gives you a polynomial in (z,c) whose zero locus is the set of
+prime period 4 points for the map f[c](z). You can solve for c in
+terms of z, as I said before, using realroots for example.
+
+Leo
+
+
+*/
+
+
+
+
+
+
+f[c](z) := z^2+c $
+nth_iterate(f,z,n) := if n=0 then z else rat(nth_iterate(f,f(z),n-1)) $
+proper_factors(n) := listify(delete(n,divisors(n))) $
+periodic_points(f,x,n) := rat(nth_iterate(f,x,n)-x) $
+sub_periodic_points(f,x,n) := apply(lcm,map(lambda([k], periodic_points(f,x,k)),proper_factors(n))) $
+prime_periodic_points(f,x,n) := rat(periodic_points(f,x,n)/sub_periodic_points(f,x,n));
+
+GiveCC(z,period):=block
+(
+ [s, cz:[], cc ],
+ s:prime_periodic_points(f[c],z,1),
+ rat(s),
+ s:ev(s), /* replace variable z with it's value */
+ cc:realroots(s),
+ cc:map('rhs,cc),
+ cc:map('float,cc),
+ for c in cc do cz:cons([c,z],cz),
+ return(cz)
+
+)$
+
+
+compile(all);
+
+
+
+
+
+
+
+
+
+/*
+
+
+*/
+zMin:-2;
+zMax:0.25;
+zStep:0.03;
+period:1;
+z:0.5;
+
+cz: GiveCC(z,period)$
+
+
+

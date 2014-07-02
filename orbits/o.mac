@@ -1,0 +1,79 @@
+
+kill(all);
+remvalue(all);
+
+
+/* compute vectors at the given points  vector ([x,y], [dx,dy]) 
+  vector([x,y], [dx,dy]) plots vector [dx,dy] with origin in [x,y]. 
+*/
+
+
+ 
+
+GiveCirclePoint(t):=rectform(%e^(%i*t*2*%pi)); /* gives point of unit circle for angle t in turns */
+
+ellipse(0,0,1,1,0,360),  /* center (x,y), radius_a, radius_b, start & end in degrees */
+
+GiveVector(origin, target):=block(
+ [x,y,dx,dy],
+ x:realpart(origin),
+ y:imagpart(origin),
+ dx:realpart(target)-x,
+ dy:imagpart(target)-y,
+ vector([x,y],[dx,dy])
+)$
+
+GiveAttractingVector(origin):=GiveVector(origin, 0)$ /* from origin to 0 */
+GiveRepellingVector(target):=GiveVector(0, target)$  /* from 0 to target */
+
+
+GiveAttractingVectors(Denominator):=(
+ [AttractingInternalAngles, AttractingCirclePoints,nMax],
+ nMax:Denominator,
+ AttractingInternalAngles:makelist(n/nMax ,n,1,nMax),
+ AttractingCirclePoints:listify(map(GiveCirclePoint,AttractingInternalAngles )),
+ listify(map(GiveAttractingVector,AttractingCirclePoints))
+)$
+
+
+
+GiveScene(sTitle, vector):=
+gr2d(title= sTitle,
+        user_preamble = "set border 0;set nokey;set size square;set noxtics ;set noytics;",
+        yrange = [-1,1],
+        xrange = [-1,1],
+        [head_length=0.1, head_angle  = 10, color=blue],
+        vector,
+        ellipse(0,0,1,1,0,360),  /* unit circle : center (x,y), radius_a, radius_b, start & end in degrees */
+        )$
+
+
+
+compile(all);
+
+/* ----------------*/
+
+
+
+
+scenes:[];
+for Denominator:1 thru 10 step 1 do
+(
+ 
+ scene:GiveScene(string(1/Denominator),GiveAttractingVectors(Denominator)),
+ scenes:endcons(scene,scenes))$
+
+
+/* ----------draw the vector field ----------------------------*/
+
+draw(
+     
+ terminal  = 'svg,
+    columns =5,
+    file_name = "b", /* one can add path here */
+    pic_width  = 1000,    /* Since Maxima 5.23, pic_width and pic_height are deprecated. */
+    pic_height = 500,    /* See option dimensions. To get the same effect, write dimensions=[800,600] */
+    scenes
+
+
+)$

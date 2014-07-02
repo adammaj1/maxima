@@ -1,0 +1,136 @@
+/*
+
+ b batch file for maxima
+
+
+
+There are 2 complex planes :
+* w-plane 
+* z-plane 
+
+
+1 step transformation from w plane go to z plane using z=h(w)
+
+
+ 
+*/
+
+kill(all);
+remvalue(all);
+
+
+/*
+
+*/
+
+
+
+iMax:1000; /* number of points to draw */
+wxMin: -80;
+
+
+
+/* =================== functions ============ */
+
+
+/* computes w from wx 
+GCarleson , Gamelin: Complex Dynamics, Springer, 1993, page 36
+
+Julia Sets of Complex Polynomials and Their Implementation on the Computer by Christoph Martin Stroh
+page 27 
+*/
+
+f(wx):= if (wx<=0) 
+             then (-k*wx + d )      /* line segment */
+             else  sqrt(r2-wx*wx); /*  circle segment */
+h(w):=-1/w;
+
+m(w):= -realpart(w)+imagpart(w)*%i; /* */
+
+
+/* converts complex number into list for draw package  */
+ draw_format(z):= [float(realpart(z)),float(imagpart(z))];
+
+
+
+compile(all);
+
+
+
+/* ============== compute ===============  */
+m:2;
+d:6;
+r : f(0);
+r2: r*r;
+wxMax: r;
+wxStep: (wxMax-wxMin)/iMax;
+k:0.1;
+
+
+/* point to point method of drawing 
+ compute first point of curve, create list and save point to this list */
+
+ 
+ wListA:[]; 
+ 
+
+ for wx:wxMin step wxStep  while (wx<= wxMax) do
+  (  
+     wy:f(wx),
+     wListA:cons(wx+wy*%i,wListA),  
+     wListA:endcons(wx-wy*%i,wListA)
+ )$
+
+ zListA:map(h,wListA)$
+ wListR: map(m, wListA)$
+ zListR: map(m, zListA)$
+
+/* convert list to draw format */
+
+ wListA:map(draw_format,wListA)$ 
+ zListA:map(draw_format,zListA)$ 
+ wListR:map(draw_format,wListR)$ 
+ zListR:map(draw_format,zListR)$ 
+
+/* =================  draw ======================================*/
+
+path:"~/maxima/batch/julia/parabolic/z2z/stroh/circle/"$ /* pwd  */
+ FileName:concat(string(k),"d", string(d))$ /* without extension which is the terminal name */
+
+ load(draw); /* Mario Rodríguez Riotorto   http://www.telefonica.net/web2/biomates/maxima/gpdraw/index.html */
+ draw(
+  terminal  = 'svg,
+  file_name = concat(path,FileName),
+  columns  = 2,
+  dimensions=[1000,500], /*  x = y*columns  */
+  
+  gr2d(title = " w plane ",
+   /* xrange = [0,3],  xtics={-10, -2, 0,2}, */
+   yrange = [-20.0,20.0],
+   xrange = [-20.0,20.0],
+   grid = true,
+   xaxis       = true,
+   xaxis_type  = solid,
+   points_joined =true,
+   color         = red,
+   point_size    = 0.5,
+   point_type = filled_circle,
+   points(wListA), 
+   color         = blue,
+   points(wListR)
+   ),
+
+  gr2d(title = " z plane : z = -1/w with petals ",
+   yrange = [-0.7,0.7],
+   xrange = [-0.7,0.7],
+   points_joined =true,
+   grid = true,
+   color         = red,
+   point_size    = 0.5,
+   point_type = filled_circle,
+   points(zListA), 
+   color         = blue,
+   points(zListR)
+  )
+
+ );

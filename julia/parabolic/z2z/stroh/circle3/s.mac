@@ -1,0 +1,189 @@
+/*
+
+ b batch file for maxima
+
+
+
+There are 2 complex planes :
+* w-plane 
+* z-plane 
+
+
+1 step transformation from w plane go to z plane using z=h(w)
+
+The equation can be written in parametric form using the trigonometric functions sine and cosine as
+
+x = a+rcos t,
+y = b+rsin t,
+ 
+*/
+
+kill(all);
+remvalue(all);
+
+
+/*
+
+*/
+
+
+
+iMax:1000; /* number of points to draw */
+wxMin: -80;
+ /* circle is centered in origin ;  p = 0 */
+
+
+/* =================== functions ============ */
+
+
+/* 
+
+wy:f(wx)
+
+*/
+
+f(wx):= if (wx<wxt) 
+             then (k*wx + d )      /* line segment */
+             else  sqrt(r2-wx*wx); /*  circle segment */
+
+
+
+
+h(w):=-1/w;
+
+m(w):= -realpart(w)+imagpart(w)*%i; /* */
+
+
+/* converts complex number into list for draw package  */
+ draw_format(z):= [float(realpart(z)),float(imagpart(z))];
+
+
+
+compile(all);
+
+
+
+/* ============== compute ===============  */
+r : 2; /* radius of the circle */
+r2: r*r;
+
+t:1/8; /* angle in turns at which line is tangent to circle  */
+/* point in which line is tangent to circle  wt : wxt+wyt*i */
+wxt:r*cos(2*%pi*t);
+wyt:r*sin(2*%pi*t);
+
+k:-1;
+d:2*wyt;
+
+
+wxMax: r;
+wxStep: (wxMax-wxMin)/iMax;
+
+
+
+/* point to point method of drawing 
+ compute first point of curve, create list and save point to this list */
+
+ 
+ wListA1:[]; 
+ 
+
+ for wx:wxMin step wxStep  while (wx<= wxMax) do
+  (  
+     wy:f(wx),
+     wListA1:cons(wx+wy*%i,wListA1),  
+     wListA1:endcons(wx-wy*%i,wListA1)
+ )$
+
+
+ wListR1: map(m, wListA1)$
+ zListA1:map(h,wListA1)$
+ zListR1: map(m, zListA1)$
+
+ wListA0 : makelist (r+%i*k/10, k, -400, 400 )$ /* line re(w)=0 */
+ zListA0: map(h,wListA0)$
+
+ /* horizontal z-lines */
+ wwx  : makelist (r+k/10, k, 0, 400 )$ /* line im(z)=0 */
+ zzx:map(h,wwx)$
+
+
+
+/* single important points */
+ z0 : 0; /* origin z=0 */
+ 
+
+/* convert list to draw format */
+ wListA0:map(draw_format,wListA0)$ 
+ wListA1:map(draw_format,wListA1)$ 
+ zListA0:map(draw_format,zListA0)$ 
+ zListA1:map(draw_format,zListA1)$ 
+ wListR1:map(draw_format,wListR1)$ 
+ zListR1:map(draw_format,zListR1)$ 
+
+ wwx:map( draw_format,wwx)$
+ zzx:map(draw_format,zzx)$
+ 
+ z0:draw_format(z0);
+
+/* =================  draw ======================================*/
+
+path:"~/maxima/batch/julia/parabolic/z2z/stroh/circle3/"$ /* pwd  */
+ FileName:concat(string(r),"rn")$ /* without extension which is the terminal name */
+
+ load(draw); /* Mario Rodríguez Riotorto   http://www.telefonica.net/web2/biomates/maxima/gpdraw/index.html */
+ draw(
+  terminal  = 'svg,
+  file_name = concat(path,FileName),
+  columns  = 2,
+  dimensions=[1000,500], /*  x = y*columns  */
+  
+  gr2d(title = " w plane ",
+   /* xrange = [0,3],  xtics={-10, -2, 0,2}, */
+   yrange = [-20.0,20.0],
+   xrange = [-20.0,20.0],
+   grid = false,
+   xaxis       = false,
+   points_joined =true,
+   
+   point_size    = 0.2,
+   point_type = filled_circle,
+   color=green,
+   points(wListA0),
+   color         = red,
+   points(wListA1), 
+   
+   color         = blue,
+   points(wListR1),
+   color = gray,
+   points(wwx)
+   
+   ),
+
+  gr2d(title = " z plane : z = -1/w with petals ",
+   yrange = [-0.7,0.7],
+   xrange = [-0.7,0.7],
+   points_joined =true,
+   grid = false,
+   point_size    = 0.2,
+   point_type = filled_circle,
+   key = "attracting petal",
+   color=green,
+   points(zListA0),
+   color         = red,
+   points(zListA1), 
+   key = "repelling petal",
+   color         = blue,
+   points(zListR1),
+   key = "",
+   color = gray,
+   points(zzx),
+
+   points_joined =false,
+   color = black,
+   point_size    = 0.8,
+   key="origin",
+   points([z0])
+  )
+
+ );

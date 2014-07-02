@@ -1,0 +1,129 @@
+/* 
+
+Maxima CAS batch file 
+
+
+Converting ratio of integers ( decimal fraction < 1.0) to Decimal expansion 
+( repeating of 
+
+en.wikipedia.org/wiki/Repeating_decimal)  
+
+a = the dividend (number being divided) = numerator of the ratio
+b = the divisor (number doing the division) = denominator of the ratio 
+
+a<b
+
+
+the real quotient (answer)
+
+quotient = dividend/divisor= a/b
+
+algorithm : 
+
+Long Division of positive integers to Decimal Places ( without remainder )
+
+https://www.khanacademy.org/math/arithmetic/fractions/decimals_fractions/v/converting-a-fraction-to-a-repeating-decimal
+http://www-personal.umich.edu/~yxl/486/W11/decimals-of-ratls-W11.pdf
+
+L = a leftover is the number that rermains after each step of long division. It is used to begin the next step
+D = decimal digit of the long division step
+ 
+to check result use :
+http://www.knowledgedoor.com/2/calculators/convert_a_ratio_of_integers.html
+
+
+error for :
+1/5
+1/2
+
+
+*/
+
+remvalue(all);
+kill(all);
+
+
+/* functions */
+
+
+/* give decimal digit D of the long division step */
+GiveD(leftover,divisor) := ceiling(float((10*leftover - divisor)/divisor))$
+
+/* Give leftover for next step of long division */
+GiveL(leftover,DecimalDigit,divisor) := 10*leftover - DecimalDigit*divisor$
+
+
+/* ratio in lowest terms 
+  not working now 
+
+Terminating decimals represent rational numbers of the form k/(2^n*5^m)
+A fraction in lowest terms with a prime denominator other than 2 or 5 (i.e. coprime to 10) always produces a repeating decimal.
+*/
+GiveRatioType(ratio):=
+block 
+(
+  [numerator:denom(ratio), 
+   FactorsList , 
+   type: "finite decimal expansion" ],
+  FactorsList:ifactors(numerator),
+  for f in FactorsList do  
+    if (not member(first(f),[2,5])) 
+     then type:"repeating decimal expansion",
+  return(type)
+)$
+
+compile(all)$
+
+
+
+/* input numbers*/
+a:1 $
+b:5 $
+
+
+/* automatic change to lowest terms */
+dRatio:a/b; 
+ 
+a: num(dRatio);
+b: denom(dRatio);
+
+
+dFloat:0.0 $  /* quotient */
+k:0$ /* current position of decimal digit */
+LeftoverList:[]$ /* list of leftovers */
+
+/* Long Division of positive integers to Decimal Places ( without remainder ) */
+
+/* first step */
+L:a$
+D:GiveD(L, b)$
+k:k-1$
+dFloat:dFloat +D*10^k$ /* save new digit to output float */
+LeftoverList:cons(L,LeftoverList)$
+disp(L,D)$
+
+
+/* nest steps */
+
+L:GiveL(L, D, b)$
+while (not member(L,LeftoverList) )  /* test for the end of repeating sequence */
+do 
+ (
+  D:GiveD(L, b),
+  k:k-1,
+  dFloat:dFloat +D*10^k, /* save new digit to output float */
+  LeftoverList:cons(L,LeftoverList),
+  disp(L,D),
+  L:GiveL(L, D, b)
+ )$
+
+
+disp(dRatio, " = ", dFloat," with ",  GiveRatioType(dRatio))$
+
+
+
+
+
+
+
+

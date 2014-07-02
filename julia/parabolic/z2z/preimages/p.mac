@@ -1,0 +1,154 @@
+/*
+
+ b batch file for maxima
+
+
+
+There are 2 complex planes :
+* w-plane 
+* z-plane 
+
+
+1. draw circle on z plane ( i=0)
+2. draw iMax preimages of circle on z plane
+3. map z circles to w circles ( from z plane to w plane ) 
+
+
+
+ 
+*/
+
+kill(all);
+remvalue(all);
+
+
+/*
+
+*/
+
+
+
+pMax:100; /* number of points to draw on each closed curve */
+
+/* i means (inverse) iteration here, it gives preiomage of point  */
+iMax:4; /* number of inverse iteration */
+iMin:0; /* before first iteration */
+radius:0.1;
+center:1;
+
+iLength: iMax-iMin +1; /* number of curvs to draw */
+
+dt:float(1/pMax); /* step of turn of closed curve */
+          
+ /*  */
+
+
+/* =================== functions ============ */
+
+
+/* t is an angle in turns */ 
+GiveCirclePoint(t):=radius*%e^(2*%pi*%i*t);
+
+
+
+GiveCircleList(center,radius, pMax):=
+block(
+  [t,z,zz],
+  zz:[],
+  
+  for p:0 step 1 thru pMax do
+  (
+    t:p*dt,
+    z: rectform(center + GiveCirclePoint(t)),
+    zz:cons(z,zz)
+   ),
+  return(zz)
+  
+)$
+
+
+/*  
+GCarleson , Gamelin: Complex Dynamics, Springer, 1993, page 36
+
+*/
+
+
+
+
+h(z):=if z=0 then inf else  -1/z; /* map from z plane to w plane : w = h(z) */
+
+
+
+m(w):= -realpart(w)+imagpart(w)*%i; /* */
+
+
+
+
+/* converts complex number into list for draw package  */
+ draw_format(z):= [float(realpart(z)),float(imagpart(z))];
+
+
+
+compile(all);
+
+
+
+/* ============== compute ===============  */
+
+/* point to point method of drawing 
+ compute first point of curve, create list and save point to this list */
+
+ 
+ zzz:makelist ([], i, 0, iMax); /* make list of empty lists */
+ www:makelist ([], i, 0, iMax); /* make list of empty lists */
+ /* first list zz0 = zzz[0] is a circle */
+ zzz[1]:GiveCircleList(center,radius, pMax)$
+ /*www[1]:map(h,zzz[1])$*/
+ 
+www[1]:[center];
+ 
+
+/* convert list to draw format */
+
+ zzz[1]:map(draw_format,zzz[1])$ 
+ www[1]:map(draw_format,www[1])$ 
+ 
+
+/* =================  draw ======================================*/
+
+path:"~/maxima/batch/julia/parabolic/z2z/preimages/"$ /* pwd  */
+ FileName:concat(string(k),"d", string(d))$ /* without extension which is the terminal name */
+
+ load(draw); /* Mario Rodríguez Riotorto   http://www.telefonica.net/web2/biomates/maxima/gpdraw/index.html */
+ draw(
+  terminal  = 'svg,
+  file_name = concat(path,FileName),
+  columns  = 2,
+  dimensions=[1000,500], /*  x = y*columns  */
+  
+  gr2d(title = " w plane : ",
+   /* xrange = [0,3],  xtics={-10, -2, 0,2}, */
+   yrange = [-20.0,20.0],
+   xrange = [-20.0,20.0],
+   grid = true,
+   xaxis       = true,
+   xaxis_type  = solid,
+   points_joined =true,
+   color         = red,
+   point_size    = 0.5,
+   point_type = filled_circle,
+   points(www[1])
+),
+
+  gr2d(title = " z plane with petals ",
+   yrange = [-2,2],
+   xrange = [-2,2],
+   points_joined =true,
+   grid = true,
+   color         = red,
+   point_size    = 0.5,
+   point_type = filled_circle,
+   points(zzz[1])
+  )
+
+ );

@@ -1,0 +1,194 @@
+/*
+
+ batch file for maxima
+
+http://mathr.co.uk/blog/2013-12-16_stretching_cusps.html
+Claude Heiland-Allen
+
+
+
+Figure 4.22 on pages 204-205 of The Science Of Fractal Images is presented with this description:
+
+    A region along the cardioid is continuously blown up and stretched out, so that the respective segment of the cardioid becomes a line segment. ... Our blow-up factor is chosen accordingly to the result that all disks in Figure 4.22 have the same size.
+
+transformation from line, thru half of the circle, to half of the cardioid 
+
+There are 3 complex planes :
+* z-plane ( where are lines) = k-plane in Claude Heiland-Allen notation
+* w-plane ( where are circles)
+* c-plane ( for cardioid )
+
+2 steps :
+* from z plane go to w plane using w=fi(z)
+* from w plane go to the  c plane using  c = gi(w)
+
+so c = gi( fi ( z)) 
+
+*/
+
+kill(all);
+remvalue(all);
+
+
+/*
+
+*/
+
+z1:0;
+z2:1;
+/* z3:infinity;  z3 must be infinity */
+zMax: 5; /* zMax << z3=infinity */
+
+
+
+z_width:%i/3; /*  gfi(%i/3)= -2  and z= i gives error  in fi function  */
+
+
+/* 3 points on the unit hemicircle */
+w1:-1;
+w2:%i;
+w3:1;
+
+
+iMax:100; /* number of points to draw */
+dz:abs(zMax-z1)/iMax; /* z step */
+
+
+/* =================== functions ============ */
+
+/* 
+ray { z : z<=0 and imagpart(z)=0 }  to unit hemicircle where 0<= t <= pi
+z= i gives error 
+*/
+fi(z):=(-%i-z)/(%i-z);
+
+ /* conformal map from  circle to cardioid  */
+ gi(w):=w/2-w*w/4; /* (1-(w+1)^2)/4;  */
+
+/* check */
+gfi(z):=gi(fi(z));
+
+/* converts complex number into list for draw package  */
+ draw_format(z):= [realpart(z),imagpart(z)];
+
+
+
+compile(all);
+
+
+
+/* ============== compute ===============  */
+
+/* point to point method of drawing 
+ compute first point of curve, create list and save point to this list */
+  
+ z:z1;    
+ LineList:[z]; 
+ for i:1 thru iMax step 1 do
+  (  z:z+dz,
+     LineList:cons(z,LineList)
+ );
+
+ z:z1+z_width;
+ LineList2:[z]; 
+ for i:1 thru iMax step 1 do
+  (  z:z+dz,
+     LineList2:cons(z,LineList2)
+ );
+
+ z_points:[z1,z2];
+ z_points2:[z1+z_width,z2+z_width]; /* only 32 points, third is infinity */
+
+/* mapping from  line to hemi circle */
+ CircleList: map(fi, LineList) $
+ CircleList2: map(fi, LineList2) $
+ w_points:[w1,w2,w3]; 
+ w_points2: map(fi, z_points2)$
+
+/* conformal mapping from  circle to cardioid */
+ CardioidList: map(gi, CircleList) $
+ CardioidList2: map(gi, CircleList2) $ 
+ c_points: map(gi, w_points) $
+ c_points2: map(gi, w_points2) $
+
+/* convert list to draw format */
+
+ LineList:map(draw_format,LineList)$ 
+ z_points: map(draw_format, z_points) $
+ 
+
+  LineList2:map(draw_format,LineList2)$ 
+  z_points2: map(draw_format, z_points2) $
+
+ CircleList:map(draw_format,CircleList)$ 
+ w_points: map(draw_format, w_points) $
+
+ CircleList2:map(draw_format,CircleList2)$  
+ w_points2: map(draw_format, w_points2) $
+
+ CardioidList:map(draw_format, CardioidList)$
+ c_points: map(draw_format, c_points) $
+
+ CardioidList2:map(draw_format, CardioidList2)$ 
+ c_points2: map(draw_format, c_points2) $
+
+/* =================  draw ======================================*/
+
+path:"~/maxima/batch/mandelbrot/circe2cardioid/maximus/w5/"$ /* pwd  */
+ FileName:"a6"$ /* without extension which is the terminal name */
+
+ load(draw); /* Mario Rodríguez Riotorto   http://www.telefonica.net/web2/biomates/maxima/gpdraw/index.html */
+ draw(
+  terminal  = 'svg,
+  file_name = concat(path,FileName),
+  columns  = 3,
+  dimensions=[1000,333], /*  x = y*columns  */
+  
+  gr2d(title = " rays ",
+   /* xrange = [0,3],  */
+   points_joined =true,
+   color         = green,
+   point_size    = 0.5,
+   point_type = filled_circle,
+   points(LineList),
+   points(LineList2), 
+   points_joined =false,
+   point_type    = filled_circle,
+   color         = black,
+   point_size    = 1.0,
+   points(z_points),
+   points(z_points2) 
+   ),
+
+  gr2d(title = " circles = image(rays) ",
+   points_joined =true,
+   color         = red,
+   point_size    = 0.5,
+   point_type = filled_circle,
+   points(CircleList),
+   points(CircleList2), 
+   points_joined =false,
+   point_type    = filled_circle,
+   color         = black,
+   point_size    = 1.0,
+   points(w_points),
+   points(w_points2)),
+
+  gr2d(title      = "cardioids = image(circles) ",
+   points_joined =true,
+   color         = blue,
+   point_size    = 0.5,
+   point_type = filled_circle,
+   points(CardioidList),
+   points(CardioidList2),
+   points_joined =false,
+   point_type    = filled_circle,
+   color         = black,
+   point_size    = 1.0,
+   points(c_points),
+   points(c_points))
+
+ );
+
+
+

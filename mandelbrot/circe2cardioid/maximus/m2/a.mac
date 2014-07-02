@@ -1,0 +1,162 @@
+/* 
+ batch file for maxima
+
+http://mathr.co.uk/blog/2013-12-16_stretching_cusps.html
+
+transformation from line, thru half of the circle, to half of the cardioid 
+
+there are 3 complex planes :
+* k-plane ( where are lines)
+* w-plane ( where are circles)
+* c-plane ( for cardioid )
+
+Start from k plane 
+go to w plane : w=fi(k)
+and to the c plane : c = gi(w) 
+ 
+ */ 
+
+
+kill(all);
+remvalue(all);
+
+
+
+
+
+ /* conformal map from  circle to cardioid  */
+ gi(w):=(1-(w+1)^2)/4; /* w-w*w; */
+
+/* 
+
+map from cirlce to line 
+http://sym.lboro.ac.uk/resources/Handout_Bilinear.pdf
+http://mathfaculty.fullerton.edu/mathews//c2003/MobiusTranformationMod.html
+http://math.stackexchange.com/questions/334783/what-mobius-transformation-maps-the-unit-circle-z-z-1-to-the-real-axis
+
+*/
+f(w):=block
+([t],
+t:%i*(w-1)/(1+w),
+/* to remove numerical errors */
+if (abs(imagpart(t)< 0.0000000001))
+then t: realpart(t),
+return(t)
+); /* (a*w+b)/(c*w+d); */
+
+/*
+inverse function
+e:k=%i*(w-1)/(1+w);
+
+solve(e,w);
+
+w=−(k+%i)/k−%i)
+
+fi(w):=((w+1)*(%i+1))/((w-1)*(%i-1));
+
+*/
+
+fi(k):=−(k+%i)/(k−%i)$
+
+
+/* 
+ circle D={w:abs(w)=1 } where w=l(t) 
+ t is angle in turns ; 1 turn = 360 degree = 2*Pi radians 
+ */
+ l(t):=%e^(%i*t*2*%pi);
+
+/* converts complex number into list for draw package  */
+draw_format(z):=
+[realpart(z),imagpart(z)];
+
+compile(all);
+
+
+/* 3 points on w plane defining Mobius transformation*/
+ w_points:[-1, -%i, 1];
+
+
+a : w_points[2]-w_points[3];
+b : a*w_points[1];
+c : (w_points[2]-w_points[1]);
+d : c*w_points[3];
+ 
+ iMax:100; /* number of points to draw */
+ dt:1/(2*iMax);
+ 
+ /* point to point method of drawing */
+
+ /* compute first point of curve, create list and save point to this list */
+ t:0.5; /* angle in turns */ 
+ w:rectform(ev(l(t), numer)); /* point of unit circle   w:l(t); */   
+ circleList:makelist (w, j, 1, 1); 
+ for i:1 thru iMax step 1 do
+ block
+ (  t:t+dt,
+    w:rectform(ev(l(t), numer)), 
+    circleList:cons(w,circleList)
+ );
+ 
+ /* conformal mapping from  circle to cardioid */
+ cardioidList: map(gi, circleList) $
+ c_points: map(gi, w_points) $
+
+ lineList:map(f,circleList)$
+ k_points:[f(1), f(-%i)]; 
+  
+
+/* convert list to draw format */
+ circleList:map(draw_format, circleList)$
+ cardioidList:map(draw_format, cardioidList)$
+
+ w_points: map(draw_format, w_points) $
+ c_points: map(draw_format, c_points) $
+ k_points: map(draw_format, k_points) $
+
+ lineList:map(draw_format,lineList)$ 
+
+ path:"~/maxima/batch/mandelbrot/circe2cardioid/maximus/"$ /* pwd  */
+ FileName:"e"$ /* without extension which is the terminal name */
+
+ load(draw); /* Mario Rodríguez Riotorto   http://www.telefonica.net/web2/biomates/maxima/gpdraw/index.html */
+ draw(
+  terminal  = 'svg,
+  file_name = concat(path,FileName),
+  columns  = 3,
+  dimensions=[1000,333], /*  x = y*columns  */
+  
+  gr2d(title = " line  i*(w-1)/(1+w) ",
+   xrange = [-1,3], 
+   points_joined =true,
+   color         = green,
+   point_type = 0,
+   points(lineList),
+   points_joined =false,
+   point_type    = filled_circle,
+   color         = black,
+   point_size    = 1.0,
+   points(k_points)
+     ),
+
+  gr2d(title = " circle D={w:abs(w)=1 } ",
+   points_joined =true,
+   color         = red,
+   point_type = 0,
+   points(circleList),
+   points_joined =false,
+   point_type    = filled_circle,
+   color         = black,
+   point_size    = 1.0,
+   points(w_points)),
+
+  gr2d(title      = "cardioid {c: c = (1-(w+1)^2)/4 } ",
+   points_joined =true,
+   color         = blue,
+   point_type = 0,
+   points(cardioidList),
+   points_joined =false,
+   point_type    = filled_circle,
+   color         = black,
+   point_size    = 1.0,
+   points(c_points))
+ );

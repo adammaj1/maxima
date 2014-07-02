@@ -1,0 +1,20 @@
+
+/* maps hemicircle to ray */
+f(z):=(((z+1)*(%i-1))/((z-1)*(%i+1)));
+
+/*
+
+(%i2) f(-1);
+(%o2) 0
+(%i3) f(%i);
+(%o3) 1
+(%i4) f(1);
+expt: undefined: 0 to a negative exponent.
+#0: f(z=1)
+ -- an error. To debug this try: debugmode(true);
+*/
+
+
+
+
+fi(w):=(w*(-%i-1) +1-%i)/(-w*(%i+1)+(%i-1));

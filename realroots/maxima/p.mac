@@ -1,0 +1,102 @@
+kill(all);
+remvalue(all);
+
+
+/* real quadratic  diagram based on the code by Mario Rodriguez Riotorto using Maxima CAS draw packag  */
+
+
+
+pts:[]; /* points of the orbit */
+
+ls:[];
+kMax1:2000;
+kMax2:1000;
+
+
+
+
+roots:[];
+
+
+iMax:1000;
+c:0.25;
+dc:(c+1.5)/iMax;
+roots:cons([c,0],roots); /* first root */
+asc:[];
+desc:[];
+checkP : false;
+
+/* ------------- compute -----------------------------------*/
+
+for  i:0 thru iMax  do 
+    (
+       
+       z: 0.0,
+       l:0, /* Lyapunov exponent */
+       /* old l for finding roots */
+       for k:1 thru kMax1  /*while (abs(z)<2)*/ do 
+         (    
+           z: z * z+c, /* to remove points from image compute and do not draw it */
+           l:l+log(abs(2*z))
+         ),
+       
+        for k:1 thru kMax2 /*while (abs(z)<2)*/ do 
+          ( 
+           z:  z * z+c, /* compute and draw it */
+           pts: cons([c,z], pts),/* save points to draw it later */
+	   l:l+log(abs(2*z))	
+          ),
+       l:l/(kMax1+kMax2),
+       ls:cons([c,l],ls),   /* save points to draw it later */         
+       if (l<lOld) 
+         then desc:cons([c,0],desc)   /*( if checkP then (checkP:false,roots:cons([c,0],roots)))  found root */
+         else asc:cons([c,0],asc), /* checkP:true,     */
+       lOld:l,
+       c:c-dc
+                     
+    ); 
+  
+
+/* =================  draw ======================================*/
+
+path:"~/maxima/batch/realroots/maxima/"$ /* pwd  */
+ FileName:"r1"$ /* without extension which is the terminal name */
+
+load(draw);
+
+draw(
+  terminal  = 'svg,
+  file_name = concat(path,FileName),
+  
+  dimensions=[1900,2600], /*  y = x*rows  */
+  
+  gr2d(points_joined =false,
+   title      = "Bifurcation diagram, z[i+1] = z[i]*z[i] +c",
+        xlabel     = "c parameter",
+        ylabel     = "z ",
+        point_type = filled_circle,
+        point_size = 0.2,
+        color = black,
+        points(pts) 
+   ),
+
+  gr2d(title = " Lyapunov exponent ",
+   points_joined =true,
+    yaxis       = true,
+   xaxis 	= true,
+   xlabel     = "c parameter",
+   ylabel     = " lyapunov exponent ",
+   yrange = [-4,1],
+   color         = red,
+   point_size    = 0.5,
+   point_type = filled_circle,
+   points(ls),
+   points_joined =false,
+   point_size    = 1.5,
+   color = blue,
+   points(asc),
+   color = green,
+   points(desc))
+
+ );
+

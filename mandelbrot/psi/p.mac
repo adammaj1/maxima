@@ -1,0 +1,130 @@
+ /*  batch file for maxima 
+ uses :
+ - symmetry around horizontal ( 0X ) axis
+ - Psi_M function to map conjugate plane to parameter plane
+ - jungreis algorithm to 
+ time :3818
+ */ 
+
+
+ kill(all);
+ remvalue(all);
+
+ 
+ /* computes b coefficient of Jungreis function*/
+ betaF[n,m]:=block
+ (
+ [nnn:2^(n+1)-1],
+ if m=0
+ then 1.0
+ else if ((n>0) and (m < nnn)) 
+  then 0.0
+  else (betaF[n+1,m]- sum(betaF[n,k]*betaF[n,m-k],k,nnn,m-nnn)-betaF[0,m-nnn])/2.0
+ )$
+ b[m]:=betaF[0,m+1]$
+ 
+ 
+ /* Power of w to j */
+ wn[w,j]:= if j=0 then 1 else w*wn[w,j-1]$
+ 
+
+ /* ---------Jungreis function ;  c = Psi_M(w) ----------------------------- */
+ Psi_M(w):=w + sum(b[j]/wn[w,j],j,0,jMax)$
+ 
+ /* exponential for of complex number with angle in turns */
+ GiveCirclePoint(t):=R*%e^(%i*t*2*%pi)$ /* gives point of unit circle for angle t in turns */
+ GiveWRayPoint(R):=R*%e^(%i*tRay*2*%pi)$ /* gives point of external ray for radius R and angle tRay in turns */
+ 
+
+ compile(all);
+
+ 
+ jMax:80; /* precision  = proportional to details and time of computations  */
+ iMax:600; /* number of points to draw */
+ iMaxBig:800;
+ NmbrOfCurves:9;
+ /* coordinate of w-plane  not c-plane */
+ R_max:1.5;
+ R_min:1;
+ dR:(R_max-R_min)/NmbrOfCurves; /* for circles */
+ dRR:(R_max-R_min)/iMax; /* for rays */ 
+ /* --------------------------------------f_0 plane = w-plane -----------------------------------------*/
+ 
+start:elapsed_run_time ();
+/*-------------- unit circle ------------*/
+ R:1;
+ circle_angles:makelist(i/iMax,i,0,iMax/2)$
+ CirclePoints:map(GiveCirclePoint,circle_angles)$ 
+ /* ---------------external circles ---------*/
+ circle_radii: makelist(R_min+i*dR,i,1,NmbrOfCurves)$ 
+ circle_angles:makelist(i/iMaxBig,i,0,iMaxBig/2)$
+ WCirclesPoints:[]$
+ for R in circle_radii do 
+ WCirclesPoints:append(WCirclesPoints,map(GiveCirclePoint,circle_angles))$
+
+
+ /* -------------- external w rays -------------*/
+ ray_radii:makelist(R_min+dRR*i,i,1,iMax)$
+ ray_angles:[0,1/3,1/7 , 2/7 ,3/7  ]$ /* list of angles < 1/2 of root points */
+ WRaysPoints:[];
+ for tRay in ray_angles do 
+ WRaysPoints:append(WRaysPoints,map(GiveWRayPoint,ray_radii))$
+
+
+ /* -------------------------parameter plane = c plane -----------------------------------*/
+ MPoints:map(Psi_M,CirclePoints)$ /* Mandelbrot set points */
+ CRaysPoints:map(Psi_M,WRaysPoints)$ /* external z rays */
+ Equipotentials:map(Psi_M,WCirclesPoints)$
+ /* add points below horizontal axis */
+ for w in CirclePoints do CirclePoints:cons(conjugate(w),CirclePoints)$
+ for w in WRaysPoints do WRaysPoints:cons(conjugate(w),WRaysPoints)$
+ for w in WCirclesPoints do WCirclesPoints:cons(conjugate(w),WCirclesPoints)$
+ for c in MPoints do MPoints:cons(conjugate(c),MPoints)$
+ for c in CRaysPoints do CRaysPoints:cons(conjugate(c),CRaysPoints)$
+ for c in Equipotentials do Equipotentials:cons(conjugate(c),Equipotentials)$
+ /* time */
+ stop:elapsed_run_time ()$
+ time:fix(stop-start); 
+
+ /* ---------------- draw *--------------------------------------------------------------------------*/
+ load(draw); /* Mario Rodríguez Riotorto   http://www.telefonica.net/web2/biomates/maxima/gpdraw/index.html */
+
+
+ path:"~/maxima/batch/mandelbrot/psi/"$ /* pwd  */
+ FileName:concat(string(iMax),"a", string(jMax))$ /* without extension which is the terminal name */
+ 
+draw(
+  file_name = concat(path,FileName),
+  dimensions=[2000, 1000],
+  terminal  = 'svg,
+  columns  = 2,
+  
+  gr2d(
+    title = " w-plane : unit circle with external rays and circles ",
+    point_type = filled_circle,
+    points_joined =true,
+    point_size    =  0.34,
+    color         = red,
+    points(map(realpart, CirclePoints),map(imagpart, CirclePoints)),
+    points_joined =false,
+    color         = green,
+    points(map(realpart, WCirclesPoints),map(imagpart, WCirclesPoints)),
+    color         = black,
+    points(map(realpart, WRaysPoints),map(imagpart, WRaysPoints))
+   ),
+
+ gr2d(
+   title      = "z-plane :  Image of w plane under Psi_M",
+   points_joined =true,
+   point_type = filled_circle,
+   point_size    =0.34,
+   color         = blue,
+   points(map(realpart, MPoints),map(imagpart, MPoints)),
+   points_joined =false,
+   color         = green,
+   points(map(realpart, Equipotentials),map(imagpart, Equipotentials)),
+   color         = black,
+   points(map(realpart, CRaysPoints),map(imagpart, CRaysPoints))
+   ) 
+
+);

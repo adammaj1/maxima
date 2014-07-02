@@ -1,0 +1,126 @@
+/*
+
+Maxima CAS batch file
+
+
+
+
+*/
+
+remvalue(all);
+kill(all);
+
+
+/*
+input = ratio, which automaticaly changed to lowest terms by Maxima CAS
+output = string describing a type of decimal expansion
+
+---------------------------------------------------------------------------------
+" The rules that determine whether a fraction has recurring decimals or 
+not are really quite simple.
+
+1. First represent the fraction in its simplest form, by dividing both 
+numerator and denominator by common factors.
+
+2. Now, look at the denominator.
+
+3.
+3.1 If the prime factorization of the denominator contains only the 
+factors 2 and 5, then the decimal fraction of that fraction will not 
+have recurring digits. In other words : Terminating decimals represent 
+rational numbers of the form k/(2^n*5^m)
+
+
+3.2
+  A fraction in lowest terms with a prime denominator other than 2 or 5 
+(i.e. coprime to 10) always produces a repeating decimal.
+
+3.2.1
+  If the prime factorization yields factors like 3, 7, 11 or other 
+primes (other than 2 and 5), then that fraction will have a decimal 
+representation that includes recurring digits.
+
+3.2.2
+   Moreover, if the denominator's prime factors include 2 and/or 5 in 
+addition to other prime factors like 3, 7, etc., the decimal 
+representation of the fraction will start with a few non-recurring 
+decimals before the recurring part."
+
+http://blogannath.blogspot.com/2010/04/vedic-mathematics-lesson-49-recurring.html
+
+
+check :
+http://www.knowledgedoor.com/2/calculators/convert_a_ratio_of_integers.html
+
+--------------- preperiodic 
+----------------------------------------------------
+1/12= 1/(3*2^2) 0.08(3) preperiod=2 period=1
+1/6=1/(2*3) = 0.1()6) preperiod=1 preriod=2 ;
+77/600 = 77/(2^3*3*5^2) = 0.128(3) preperiod=3 period = 1
+
+
+-------------------------- periodic 
+-----------------------------------------------------
+1/3 = 0.(3) preperiod=0 preriod=2 ;
+1/7 = 0.142857  ; 6 repeating digits
+1/17 = 0.05882352 94117647  ; 16 repeating digits
+1/19 = 0.052631578 947368421  ; 18 repeating digits
+1/23 = 0.04347826086 95652173913  ; 22 repeating digits
+1/29 = 0.0344827 5862068 9655172 4137931  ; 28 repeating digits
+1/97 = 0.01030927 83505154 63917525 77319587 62886597 93814432 98969072 
+16494845 36082474 22680412 37113402 06185567  ; 96 repeating digits
+
+------------------------------------finite 
+--------------------------------------------------------------
+1/2 = 0.2 finite preperiod =0 period = 0 ; terminating decimal
+
+
+---------------------------------------------------------------------------------------
+
+*/
+
+
+GiveRatioType(ratio):=
+block
+(
+   [numerator:denom(ratio),
+    FactorsList ,
+    Factor,
+    Has25:false,
+    HasAlsoOtherPrimes:false,
+    type ], /* type of decimal expansion of the ratio of integers */
+
+   /* compute list of prime factors ofd denominator */
+   FactorsList:ifactors(numerator),
+   FactorsList:map(first,FactorsList),
+   print(numerator, FactorsList),
+   /* check factors type :
+          only 2 or 5
+          also other primes then 2 or 5
+  */
+   if (member(2,FactorsList) or member(5,FactorsList)) then Has25:true,
+
+
+   for Factor in FactorsList do
+    if (not member(Factor,[2,5])) then
+          HasAlsoOtherPrimes:true,
+   print(Has25, HasAlsoOtherPrimes),
+
+   /* find type of decimal expansion */
+   if (not Has25 and HasAlsoOtherPrimes)     then type:"periodic",
+   if (Has25 and HasAlsoOtherPrimes)     then type:"preperiodic",
+   if (Has25 and not HasAlsoOtherPrimes) then type:"finite",
+
+
+   return(type)
+)$
+
+compile(all)$
+
+/* input numbers*/
+a:1 $
+b:3 $
+
+r:a/b$
+
+type :  GiveRatioType(r);

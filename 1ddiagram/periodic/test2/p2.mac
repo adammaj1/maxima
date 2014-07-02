@@ -1,0 +1,124 @@
+/*
+
+(%i20)   time(%);
+(%o20) [1204.709]
+*/
+
+kill(all);
+remvalue(all);
+
+
+/* ---------- functions ---------------------- */
+
+
+/* basic funtion  = monic and centered complex quadratic polynomial 
+http://en.wikipedia.org/wiki/Complex_quadratic_polynomial
+
+*/
+f(z,c):=z*z+c $
+
+/* iterated function */
+fn(n, z, c) :=
+    if n=1 	then f(z,c)
+			else f(fn(n-1, z, c),c) $
+/* roots of Fn are periodic point of  fn function */
+Fn(n,z,c):=fn(n, z, c)-z $
+
+/* gives irreducible divisors of polynomial Fn[p,z,c] 
+which roots are periodic points of period p */
+G[p,z,c]:=
+block(
+ 
+ [f:divisors(p),t:1, g],
+ f:delete(p,f),
+ if p=1 
+	then return(Fn(p,z,c)),
+ for i in f do t:t*G[i,z,c],
+ g: Fn(p,z,c)/t,  
+ return(ratsimp(g))
+  )$
+  
+  
+  
+/* use :
+roots:GiveRoots_bf(G[3,z,c]);
+*/
+GiveSolutio(g):=
+block(
+ 
+ [cc],
+ cc:realroots(expand(g)=0),
+ cc:map('rhs,cc),/* remove string "c=" */
+ cc:map('float,cc),
+ return(cc)
+  )$ 
+
+
+
+GiveDrawList(Period,cMin, cMax, cStep):=
+ block
+ (
+  [MyList:[],P,s],
+  for c:cMin while c <= cMax step cStep do
+    (
+     P:G[Period,z,c],
+     s:GiveSolutio(P),
+     for z in s do MyList:cons([c,z],MyList)
+    ),
+   return(MyList)
+)$
+
+
+
+
+compile(all);
+
+/* ---------- constant ---------------------------*/
+
+nMax:2$
+cMin:-2;
+cMax:0.25;
+cStep:0.003;
+
+
+/* -------------  main -----------------------*/
+
+
+ColorList:[red,blue,green, black, purple , brown, cyan, violet,gray ]$
+
+DrawLists:[]$ /* empty list */
+
+for n:0 thru nMax do 
+(
+ print(n),
+ Period : 2^n,
+ DrawList:GiveDrawList( Period,cMin, cMax, cStep),
+ DrawLists:cons(points(DrawList),DrawLists),
+ DrawLists:cons(key =concat("period =", string(Period)),DrawLists),
+ DrawLists:cons(color=ColorList[n+1],DrawLists)
+ 
+ 
+);
+
+
+/* ----------------- draw ------------  */
+
+path:"~/maxima/batch/1ddiagram/periodic/test2/"$ /* result of pwd; to save image in the same directory as mac file  */
+ FileName:concat(string(nMax)," ", string(cStep))$ /* without extension which is the terminal name */
+
+load(draw); 
+
+draw2d(
+  terminal  = svg,
+  file_name = concat(path,FileName),
+  title = "Critical curves diagram for real quadratic map fc(z) = z^2 + c",
+  dimensions=[2000,2000],
+  user_preamble = "",
+  xlabel     = "c",
+  ylabel     = "z",
+  xaxis        = true,
+  points_joined =false,
+  point_size    =  0.2,
+  point_type = filled_circle,
+  DrawLists
+);

@@ -1,0 +1,162 @@
+/*
+
+ batch file for maxima
+
+http://mathr.co.uk/blog/2013-12-16_stretching_cusps.html
+
+transformation from line, thru half of the circle, to half of the cardioid 
+
+there are 3 complex planes :
+* k-plane ( where are lines)
+* w-plane ( where are circles)
+* c-plane ( for cardioid )
+
+Start from k plane 
+go to w plane : w=fi(k)
+and to the c plane : c = gi(w) 
+
+*/
+
+kill(all);
+remvalue(all);
+
+
+/*
+
+moebius transformation defined by 3 points 
+https://en.wikipedia.org/wiki/Möbius_transformation
+
+3 points are ordered by counterclockwise directions ????
+http://mathfaculty.fullerton.edu/mathews/c2003/mobiustranformationmod.html
+Theorem 10.3 (The Implicit Formula). There exists a unique bilinear transformation that maps three distinct points [Graphics:Images/MobiusTranformationMod_gr_93.gif]  onto three distinct points [Graphics:Images/MobiusTranformationMod_gr_94.gif], respectively.  An implicit formula for the mapping is given by the equation 
+
+   
+e:((z-z1)*(z2-z3))/((z-z3)*(z2-z1)) = ((w-w1)*(w2-w3))/((w-w3)(w2-w1));
+
+Corollary 10.1 (The Implicit Formula with a point at Infinity).  In equation (10-18) the point at infinity can be introduced as one of the prescribed points in either the z plane or the  w plane.
+
+
+(%i7) e:(z-z1)/(z2-z1)=((w-w1)*(w2-w3))/((w-w3)*(w2-w1));
+(%o7) −z=((%i+1)*(w−1))/((%i−1)*(w+1))
+(%i8) solve(e,w);
+(%o8) [w=−((%i−1)*z−%i−1)/((%i−1)*z+%i+1)]
+*/
+
+z1:0;
+z2:-1;
+/* z3:infinity;  z3 must be infinity */
+
+z_points:[z1,z2];
+
+/* 3 points on the unit hemicircle */
+w1:1;
+w2:%i;
+w3:-1;
+w_points:[w1,w2,w3];
+
+iMax:100; /* number of points to draw */
+dz:abs(3-z1)/iMax; /* z step */
+
+
+/* =================== functions ============ */
+/* ray { z : z<=0 and imagpart(z)=0 }  to unit hemicircle 
+http://mathfaculty.fullerton.edu/mathews/c2003/MapElementaryFunMod.html
+*/
+fi(z):=(%e^z+%i)/(%e^z-%i);
+
+
+ /* conformal map from  circle to cardioid  */
+ gi(w):=(1-(w+1)^2)/4; /* w-w*w; */
+
+/* converts complex number into list for draw package  */
+draw_format(z):= [realpart(z),imagpart(z)];
+
+
+
+compile(all);
+
+
+
+
+/* point to point method of drawing */
+
+/* compute first point of curve, create list and save point to this list */
+  
+ z:z1;
+ LineList:[z]; 
+ for i:1 thru iMax step 1 do
+  (  z:z-dz,
+     LineList:cons(z,LineList)
+ );
+
+
+
+/* mapping from  circle to cardioid */
+ CircleList: map(fi, LineList) $
+
+/* conformal mapping from  circle to cardioid */
+ CardioidList: map(gi, CircleList) $
+ c_points: map(gi, w_points) $
+
+/* convert list to draw format */
+
+ LineList:map(draw_format,LineList)$ 
+ z_points: map(draw_format, z_points) $
+
+ CircleList:map(draw_format,CircleList)$ 
+ w_points: map(draw_format, w_points) $
+
+ CardioidList:map(draw_format, CardioidList)$
+ c_points: map(draw_format, c_points) $
+
+/* draw */
+
+path:"~/maxima/batch/mandelbrot/circe2cardioid/maximus/m3/"$ /* pwd  */
+ FileName:"a"$ /* without extension which is the terminal name */
+
+ load(draw); /* Mario Rodríguez Riotorto   http://www.telefonica.net/web2/biomates/maxima/gpdraw/index.html */
+ draw(
+  terminal  = 'svg,
+  file_name = concat(path,FileName),
+  columns  = 3,
+  dimensions=[1000,333], /*  x = y*columns  */
+  
+  gr2d(title = " ray ",
+   /* xrange = [0,3],  */
+   points_joined =true,
+   color         = green,
+   point_type = 0,
+   points(LineList),
+   points_joined =false,
+   point_type    = filled_circle,
+   color         = black,
+   point_size    = 1.0,
+   points(z_points)
+     ),
+   gr2d(title = " circle D={w:abs(w)=1 } ",
+   points_joined =true,
+   color         = red,
+   point_type = 0,
+   points(CircleList),
+   points_joined =false,
+   point_type    = filled_circle,
+   color         = black,
+   point_size    = 1.0,
+   points(w_points))
+   ,
+
+  gr2d(title      = "cardioid {c: c = (1-(w+1)^2)/4 } ",
+   points_joined =true,
+   color         = blue,
+   point_type = 0,
+   points(CardioidList),
+   points_joined =false,
+   point_type    = filled_circle,
+   color         = black,
+   point_size    = 1.0,
+   points(c_points))
+
+ );
+
+
+

@@ -1,0 +1,80 @@
+kill(all);
+remvalue(all);
+
+
+/* ---------- functions ---------------------- */
+
+/* http://en.wikipedia.org/wiki/Complex_quadratic_polynomial  */
+f(z,c):=z*z+c;
+
+
+fn(p, z, c) :=
+  if p=0 then z
+  elseif p=1 then f(z,c)
+  else f(fn(p-1, z, c),c);
+
+
+
+GiveDrawList(Period,cMin, cMax, cStep):=
+ block
+ (
+  [MyList:[]],
+  for c:cMin while c <= cMax step cStep do
+    MyList:cons([c,fn(Period,0,c)],MyList),
+ 
+   return(MyList)
+)$
+
+
+
+
+compile(all);
+
+/* ---------- constant ---------------------------*/
+
+nMax:5$
+cMin:-2;
+cMax:0.25;
+cStep:0.003;
+
+
+/* -------------  main -----------------------*/
+
+
+ColorList:[red,blue,green, black, purple , brown, cyan, violet,gray ]$
+
+DrawLists:[]$ /* empty list */
+
+for n:0 thru nMax do 
+(
+ Period : 2^n,
+ DrawList:GiveDrawList( Period,cMin, cMax, cStep),
+ DrawLists:cons(points(DrawList),DrawLists),
+ DrawLists:cons(key =concat("period =", string(Period)),DrawLists),
+ DrawLists:cons(color=ColorList[n+1],DrawLists)
+ 
+ 
+);
+
+
+/* ----------------- draw ------------  */
+
+path:"~/maxima/batch/skeleton/even/test/"$ /* result of pwd; to save image in the same directory as mac file  */
+ FileName:string(nMax)$ /* without extension which is the terminal name */
+
+load(draw); 
+
+draw2d(
+  terminal  = svg,
+  file_name = concat(path,FileName),
+  title = "Critical curves diagram for real quadratic map fc(z) = z^2 + c",
+  dimensions=[2000,2000],
+  user_preamble = "",
+  xlabel     = "c",
+  ylabel     = "z",
+  xaxis        = true,
+  points_joined =true,
+  point_size    =  0.2,
+  point_type = filled_circle,
+  DrawLists
+);

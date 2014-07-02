@@ -1,0 +1,235 @@
+/*
+
+ b batch file for maxima
+
+
+
+There are 2 complex planes :
+* u-plane 
+* z-plane 
+
+http://arxiv.org/abs/1404.4735
+Near parabolic renormalization for unisingular holomorphic maps by Arnaud Chéritat
+
+1 step transformation from w plane go to z plane using z=h(w)
+
+The equation can be written in parametric form using the trigonometric functions sine and cosine as
+
+x = a+rcos t,
+y = b+rsin t,
+ 
+*/
+
+kill(all);
+remvalue(all);
+
+
+/*
+
+*/
+
+
+
+iMax:1000; /* number of points to draw */
+uxMin: -80;
+ /* circle is centered in origin ;  p = 0 */
+
+
+/* =================== functions ============ */
+
+
+/* 
+
+uy:f(ux)
+
+*/
+
+f(ux):= if (ux<uxt) 
+             then (k*ux + d )      /* line segment */
+             else  sqrt(r2-ux*ux); /*  circle segment */
+
+
+
+
+h(u):=-1/u;
+
+m(u):= -realpart(u)+imagpart(u)*%i; /* minus */
+
+
+/* 
+
+ inverse function of f
+ ux = fi(uy)
+
+ */
+fi(uy):=block
+(
+ [s,ux],
+ if (uy>uyt) 
+    then s: (uy - d)/k
+    else s:sqrt(r2-uy*uy),
+ s:float(s),
+ if (uy<0) then s:-s,
+ return(s)
+)$
+
+
+
+GiveHorizontalLine(uy):= 
+block(
+  [ux],
+  ux:fi(uy),
+  makelist (uy*%i+ ux+k/10, k, 0, 400 )
+)$  /*  line im(u) = const */
+
+
+
+/* converts complex number into list for draw package  */
+ draw_format(z):= [float(realpart(z)),float(imagpart(z))];
+
+
+
+compile(all);
+
+
+
+/* ============== compute ===============  */
+r : 2; /* radius of the circle */
+r2: r*r;
+
+t:1/8; /* angle in turns at which line is tangent to circle  */
+/* point in which line is tangent to circle  wt : wxt+wyt*i */
+uxt:r*cos(2*%pi*t);
+uyt:r*sin(2*%pi*t);
+
+k:-1;
+d:2*uyt;
+
+
+uxMax: r;
+uxStep: (uxMax-uxMin)/iMax;
+
+
+
+/* point to point method of drawing 
+ compute first point of curve, create list and save point to this list */
+
+ 
+ uListA1:[]; 
+ 
+
+ for ux:uxMin step uxStep  while (ux<= uxMax) do
+  (  
+     uy:f(ux),
+     uListA1:cons(ux+uy*%i,uListA1),  
+     uListA1:endcons(ux-uy*%i,uListA1)
+ )$
+
+
+ uListR1: map(m, uListA1)$
+ zListA1:map(h,uListA1)$
+ zListR1: map(m, zListA1)$
+
+ uListA0 : makelist (r+%i*k/10, k, -400, 400 )$ /* line re(w)=0 */
+ zListA0: map(h,uListA0)$
+
+ /* horizontal u-lines */
+ uuh:[0,5,-5,10,-10,15,-15]$
+ uuh:map(GiveHorizontalLine,uuh)$
+ for uu in uuh do uu:map(draw_format,uu)$ 
+ uuh0  : GiveHorizontalLine(0)$ /* line im(u)=0 */
+ uuh5  : GiveHorizontalLine(5)$ /* line im(u)=0 */
+ uuh10  : GiveHorizontalLine(10)$ /* line im(u)=0 */
+ 
+ zzh0:map(h,uuh0)$
+ zzh5: map(h,uuh5)$
+ zzh10: map(h,uuh10)$
+
+
+/* single important points */
+ z0 : 0; /* origin z=0 */
+ 
+
+/* convert list to draw format */
+ uListA0:map(draw_format,uListA0)$ 
+ uListA1:map(draw_format,uListA1)$ 
+ zListA0:map(draw_format,zListA0)$ 
+ zListA1:map(draw_format,zListA1)$ 
+ uListR1:map(draw_format,uListR1)$ 
+ zListR1:map(draw_format,zListR1)$ 
+
+ uuh0:map( draw_format,uuh0)$
+ uuh5:map( draw_format,uuh5)$
+ uuh10:map( draw_format,uuh10)$
+ 
+ zzh0:map(draw_format,zzh0)$
+ zzh5:map(draw_format,zzh5)$
+ zzh10:map(draw_format,zzh10)$
+ 
+ z0:draw_format(z0);
+
+/* =================  draw ======================================*/
+
+path:"~/maxima/batch/julia/parabolic/z2z/stroh/u/"$ /* pwd  */
+ FileName:concat(string(r),"rn")$ /* without extension which is the terminal name */
+
+ load(draw); /* Mario Rodríguez Riotorto   http://www.telefonica.net/web2/biomates/maxima/gpdraw/index.html */
+ draw(
+  terminal  = 'svg,
+  file_name = concat(path,FileName),
+  columns  = 2,
+  dimensions=[1000,500], /*  x = y*columns  */
+  
+  gr2d(title = " u plane ",
+   /* xrange = [0,3],  xtics={-10, -2, 0,2}, */
+   yrange = [-20.0,20.0],
+   xrange = [-20.0,20.0],
+   grid = false,
+   xaxis       = false,
+   points_joined =true,
+   
+   point_size    = 0.2,
+   point_type = filled_circle,
+   color=green,
+   points(uListA0),
+   color         = red,
+   points(uListA1), 
+   
+   color         = blue,
+   points(uListR1),
+   color = gray,
+   points(uuh0),
+   points(uuh5),
+   points(uuh10)
+   
+   ),
+
+  gr2d(title = " z plane : z = -1/u with petals ",
+   yrange = [-0.7,0.7],
+   xrange = [-0.7,0.7],
+   points_joined =true,
+   grid = false,
+   point_size    = 0.2,
+   point_type = filled_circle,
+   key = "attracting petal",
+   color=green,
+   points(zListA0),
+   color         = red,
+   points(zListA1), 
+   key = "repelling petal",
+   color         = blue,
+   points(zListR1),
+   key = "",
+   color = gray,
+   points(zzh0),
+   points(zzh5),
+   points(zzh10),
+
+   points_joined =false,
+   color = black,
+   point_size    = 0.8,
+   key="origin",
+   points([z0])
+  )
+
+ );

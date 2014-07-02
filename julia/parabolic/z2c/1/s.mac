@@ -1,0 +1,145 @@
+/*
+
+ b batch file for maxima
+
+
+
+ 
+*/
+
+kill(all);
+remvalue(all);
+
+
+/*
+
+*/
+
+
+
+iMax:1000; /* number of points to draw */
+wxMin: -80;
+wxMax: 2;
+wxStep: (wxMax-wxMin)/iMax;
+k:0.2;
+d:6;
+
+
+/* =================== functions ============ */
+
+
+/* 
+circle D={w:abs(w)=1 } where w=l(t,r) 
+t is angle in turns ; 1 turn = 360 degree = 2*Pi radians 
+r is a radius 
+
+
+*/
+GiveC(angle,radius):=
+(
+ [w],  /* point of  unit circle   w:l(internalAngle,internalRadius); */
+ w:radius*%e^(%i*angle*2*%pi),  /* point of circle */
+ float(rectform(w/2-w*w/4))    /* point in a period 1 component of Mandelbrot set */
+)$
+
+
+
+/* 
+*/
+
+f(z):= z^2 + c;
+fi(z):=sqrt(z-c);
+
+
+/* find fixed points  returns a list */
+GiveFixedPoints():= block
+(
+  [s],
+  s:solve(f(z)=z),
+  /* remove "z="  from list s */
+  s:map('rhs,s),
+  s:map('rectform,s),
+  s:map('float,s),
+  return(s)
+)$
+
+
+/* exponential for of complex number with angle in turns */
+GiveCirclePoint(t):=R*%e^(%i*t*2*%pi)$ /* gives point of unit circle for angle t in turns */
+
+GiveCirclePoints(center, radius, PtsNmbr):=
+(
+          
+
+
+
+)$ 
+/* 
+circle D={w:abs(w)=1 } where w=l(t,r) 
+t is angle in turns ; 1 turn = 360 degree = 2*Pi radians 
+*/
+tMax:100;
+
+/*-------------- unit circle ------------*/
+R:1;
+circle_angles:makelist(t/tMax,t,0,tMax-1)$
+CirclePoints:map(GiveCirclePoint,circle_angles)$
+
+
+/* converts complex number into list for draw package  */
+ draw_format(z):= [float(realpart(z)),float(imagpart(z))];
+
+
+
+compile(all);
+
+
+
+/* ============== compute ===============  */
+
+c:GiveC(0,1);
+FixedPoints: GiveFixedPoints();
+
+/* point to point method of drawing 
+ compute first point of curve, create list and save point to this list */
+
+ 
+
+
+/* convert list to draw format 
+
+ wList:map(draw_format,wList)$ 
+ zList:map(draw_format,zList)$ 
+
+
+*/
+
+/* =================  draw ======================================*/
+
+path:"~/maxima/batch/julia/parabolic/z2c/1/"$ /* pwd  */
+ FileName:concat(string(k),"d", string(d))$ /* without extension which is the terminal name */
+
+ load(draw); /* Mario Rodríguez Riotorto   http://www.telefonica.net/web2/biomates/maxima/gpdraw/index.html */
+ draw2d(
+  terminal  = 'svg,
+  file_name = concat(path,FileName),
+  columns  = 2,
+  dimensions=[1000,1000], /*  x = y*columns  */
+  
+ title = " w plane ",
+   /* xrange = [0,3],  
+   yrange = [-20.0,20.0],
+   xrange = [-20.0,20.0],
+   xtics={-10, -2, 0,2},
+   */
+   grid = true,
+   xaxis       = true,
+   xaxis_type  = solid,
+   points_joined =true,
+   color         = green,
+   point_size    = 0.5,
+   point_type = filled_circle,
+   points(wList)
+  
+
+ );

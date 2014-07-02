@@ -1,0 +1,266 @@
+/*
+
+ b batch file for maxima
+
+
+
+There are 2 complex planes :
+* u-plane 
+* z-plane 
+
+http://arxiv.org/abs/1404.4735
+Near parabolic renormalization for unisingular holomorphic maps by Arnaud Chéritat
+
+1 step transformation from u plane go to z plane using z=h(u)
+
+
+ 
+*/
+
+kill(all);
+remvalue(all);
+
+
+/*
+
+*/
+
+
+
+iMax:1000; /* number of points to draw */
+uxMin: -80;
+ /* */
+
+
+/* =================== functions ============ */
+
+
+/* 
+
+uy:f(ux)
+
+"Let θ ∈ [π/2, π] and W_θ(r) denote the following domain: 
+it contains a right half plane and 
+is bounded by the arc of circle of center 0, radius r 
+and argument ranging from −(θ − π/2) to θ − π/2, 
+and by the two half lines continuing this arc tangentially to the circle (see Figure 22).
+circle is centered in origin and have radius=r 
+
+For θ = π/2 and r = R_0[g] = 1/|c g |r 0 ,
+this domain is exactly the half plane, image of D attr in the u-coordinates of g.""
+
+
+*/
+
+f(ux):= if (ux<uxt) 
+             then (a*ux + b )      /* line segment */
+             else  sqrt(r2-ux*ux); /*  circle segment */
+
+
+
+/*
+
+1 step transformation from u plane go to z plane using z=h(u)
+
+h(0)
+
+expt: undefined: 0 to a negative exponent.
+ -- an error. To debug this try: debugmode(true);
+
+h(u):= if (u=0.0) then infinity else -1/u$
+*/
+h(u):= if (u=0.0) then infinity else -1/u$
+
+m(u):= -realpart(u)+imagpart(u)*%i$ /* minus */
+
+
+/* 
+
+ inverse function of f
+ ux = fi(uy)
+
+ */
+fi(uy):=block
+(
+ [s,ux],
+ if (uy>uyt) 
+    then s: (uy - b)/a
+    else s:sqrt(r2-uy*uy),
+ s:float(s),
+ return(s)
+)$
+
+
+
+/* converts complex number into list for draw package  */
+ draw_format(z):= if (z=infinity) then [1000.0,1000.0] else  [float(realpart(z)),float(imagpart(z))];
+
+
+ /*  line im(u) = const in a draw format : point(list ) 
+  uu is a list of u values
+  zz is a list of z values
+  u = ux + uy*%i
+
+*/
+GiveHorizontalLines(uy):= 
+block(
+  [uu,zz],
+  uu:makelist ( uy*%i + (1.0 +k/10), k, -1000, 1000 ),
+  zz:map(h,uu),
+  uu:map(draw_format,uu),
+  zz:map(draw_format,zz),
+  [points(uu),points(zz)] /* list of 2 sublists : first is a uuh list , second is a zzh list */
+  
+)$ 
+
+
+
+
+
+compile(all);
+
+
+
+/* ============== compute ===============  */
+r : 2; /* radius of the circle */
+r2: r*r;
+
+t:1/8; /* angle in turns at which line is tangent to circle  */
+/* point in which line is tangent to circle  wt : wxt+wyt*i */
+uxt:r*cos(2*%pi*t);
+uyt:r*sin(2*%pi*t);
+
+a:-1;
+b:2*uyt;
+
+
+uxMax: r;
+uxStep: (uxMax-uxMin)/iMax;
+
+
+
+/* point to point method of drawing 
+ compute first point of curve, create list and save point to this list */
+
+ 
+ uListA1:[]; 
+ 
+
+ for ux:uxMin step uxStep  while (ux<= uxMax) do
+  (  
+     uy:f(ux),
+     uListA1:cons(ux+uy*%i,uListA1),  
+     uListA1:endcons(ux-uy*%i,uListA1)
+ )$
+
+
+ uListR1: map(m, uListA1)$
+ zListA1:map(h,uListA1)$
+ zListR1: map(m, zListA1)$
+
+ uListA0 : makelist (r+%i*k/10, k, -400, 700 )$ /* line re(w)=0 */
+ zListA0: map(h,uListA0)$
+ 
+ uListA01 : makelist (r+1+ %i*k/10, k, -400, 700 )$ /* line re(w)=0 */
+ zListA01 : map(h,uListA01)$
+
+ /* horizontal lines */
+ uh:[0,1,2,3,4,5,6,-1,-2,-3,-4,-5,-6]$ /* list of  values for lines im(u) = const */
+ uzh:map(GiveHorizontalLines,uh)$
+ uuh:map(first,uzh)$
+ zzh:map(second,uzh)$
+ 
+ 
+ 
+
+
+/* single important points */
+ z0 : 0; /* origin z=0 */
+ 
+
+/* convert list to draw format */
+ uListA01:map(draw_format,uListA01)$ 
+ uListA0:map(draw_format,uListA0)$ 
+ uListA1:map(draw_format,uListA1)$ 
+ uListR1:map(draw_format,uListR1)$ 
+
+ zListA01:map(draw_format,zListA01)$ 
+ zListA0:map(draw_format,zListA0)$ 
+ zListA1:map(draw_format,zListA1)$ 
+ zListR1:map(draw_format,zListR1)$ 
+
+
+ 
+ z0:draw_format(z0);
+
+/* =================  draw ======================================*/
+
+path:"~/maxima/batch/julia/parabolic/z2z/stroh/u2/"$ /* pwd  */
+ FileName:concat(string(r),"r1")$ /* without extension which is the terminal name */
+
+ load(draw); /* Mario Rodríguez Riotorto   http://riotorto.users.sourceforge.net/gnuplot/points/index.html */
+ draw(
+  terminal  = 'svg,
+  file_name = concat(path,FileName),
+  columns  = 2,
+  dimensions=[1000,500], /*  x = y*columns  */
+  
+  gr2d(title = " u plane ",
+   /* xrange = [0,3],  xtics={-10, -2, 0,2}, */
+   yrange = [-20.0,20.0],
+   xrange = [-20.0,20.0],
+   grid = false,
+   xaxis       = false,
+   points_joined =true,
+   
+   point_size    = 0.2,
+   point_type = filled_circle,
+   color=green,
+   points(uListA0),
+   color         = yellow,
+   points(uListA01), 
+
+   color         = red,
+   points(uListA1), 
+   
+   color         = blue,
+   points(uListR1),
+
+  /* key = "orbits = invariant cirves",*/
+   color = gray,
+   uuh
+   
+   ),
+
+  gr2d(title = " z plane : z = -1/u with petals ",
+   yrange = [-0.8,0.8],
+   xrange = [-0.8,0.8],
+   points_joined =true,
+   grid = false,
+   point_size    = 0.2,
+   point_type = filled_circle,
+   key = "small attracting petal",
+   color         = yellow,
+   points(zListA01), 
+   key = "small attracting petal",
+   color=green,
+   points(zListA0),
+   key = "big attracting petal",
+   color         = red,
+   points(zListA1), 
+   key = "big repelling petal",
+   color         = blue,
+   points(zListR1),
+   key = "",
+   /*key = "orbits = invariant cirves",*/
+   color = gray,
+   zzh,
+
+   points_joined =false,
+   color = black,
+   point_size    = 0.8,
+   key="fixed point",
+   points([z0])
+  )
+
+ );

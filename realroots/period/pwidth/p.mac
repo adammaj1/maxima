@@ -1,0 +1,169 @@
+kill(all);
+remvalue(all);
+
+
+/* real quadratic  diagram based on the code by Mario Rodriguez Riotorto using Maxima CAS draw packag  */
+
+f:4.669201609102990671853203820466; /* The Feigenbaum delta constant  */
+
+pts:[]; /* points of the orbit */
+
+ls:[];
+kMax1:2000;
+kMax2:2000;
+NoPeriod : -1;
+
+
+
+roots:[];
+periods:[];
+cc:[];
+
+iMax:1000;
+cMax:0.25;
+cMin:-1.42;
+c:cMax;
+dc:(cMax-cMin)/iMax;
+roots:cons([c,0],roots); /* first root */
+checkP : false;
+
+
+
+/* try to have the same number of the pixels = n
+ inside each hyperbolic component of Mandelbrot set along real axis
+ width of components */
+
+GivePixelWidth( period,n, cMax,cMin,f):=
+block(
+    [w,k],
+
+    /* A SCALING CONSTANT EQUAL TO UNITY IN 1D QUADRATIC MAPS M. ROMERA, G. PASTOR and F. MONTOYA */
+   if period =     0 then return(cMax-cMin)/n,    
+   if period =     1 then return( 1.000000000000/n),    /* exact value */
+   if period=      2 then return(0.310700264133/n), /* numerical approximation , maybe wrong */
+   if period=      4 then return(0.070844843095/n), /* w(2*p) = w(p)/f  ; f =  Feigenbaum constant */
+   if period=      8 then return(0.015397875272/n),
+   if period=     16 then return(0.003307721510/n),
+   if period=     32 then return(0.000708881730/n),
+   if period=     64 then return(0.000151841994935/n),
+   if period=    128 then return(0.000032520887170/n),
+   if period=    256 then return(0.00000696502297/n),
+   if period=    512 then return(0.000001491696694/n),
+   if period=   1024 then return(0.000000319475846/n),
+   if period=   2048 then return(0.000000068421948/n),
+   if period=   4096 then return(0.000000015/n),
+   if period=   8192 then return(0.000000004/n),
+   if period=  16384 then return(0.000000001/n),
+   if (period <0) 
+          then  return((cMax-cMin)/10.0) /* period not found or period > jMax */
+          else ( k:period/16384, w :0.000000001, while (k>2) do ( w :w/f, k :k/2),  w :w/n), /* feigenbaum scaling  */
+   return(w)
+)$
+
+compile(all);
+
+
+
+/* ------------- compute -----------------------------------*/
+
+i:0 ;
+while (c>cMin) do  
+    (
+       cc:cons([i,c],cc),
+       z: 0.0,
+       l:0, /* Lyapunov exponent */
+       /* old l for finding roots */
+       for k:1 thru kMax1  /*while (abs(z)<2)*/ do 
+         (    
+           z: z * z+c, /* to remove points from image compute and do not draw it */
+           l:l+log(abs(2*z))
+         ),
+        zOld:z,
+        z: z * z+c, /* one iteration for check while (abs(zOld-z)>dc)  */
+        l:l+log(abs(2*z)),
+         pts: cons([iMax-i,z], pts),/* save points to draw it later */
+        k:1,
+        while (abs(zOld-z)>dc) and k<=kMax2 do 
+          ( 
+           z:  z * z+c, /* compute and draw it */
+           pts: cons([iMax-i,z], pts),/* save points to draw it later */
+	   l:l+log(abs(2*z)),
+           k:k+1
+         ),
+       if (abs(z)>2) 
+           then period=0
+           else (if (abs(zOld-z)<dc )
+                     then period : k
+                     else period : NoPeriod),
+       periods:cons([iMax-i,period],periods),
+       l:l/(kMax1+k),
+       ls:cons([iMax-i,l],ls),   /* save points to draw it later */         
+       if (l<lOld) 
+         then ( if (checkP and c>-1.4011551890) then (checkP:false,roots:cons([iMax-i,0],roots)))   /*  found root  */
+         else checkP:true, /*       */
+       lOld:l,
+       dc:GivePixelWidth(period,100,cMax,cMin,f),
+       c:c-dc,
+       i:i+1
+                     
+    ); 
+  tic:map(first,roots);
+  tic:setify(tic);
+  
+
+/* =================  draw ======================================*/
+
+path:"~/maxima/batch/realroots/period/pwidth/"$ /* pwd  */
+FileName:"r1"$ /* without extension which is the terminal name */
+
+load(draw);
+
+draw(
+  terminal  = 'svg,
+  file_name = concat(path,FileName),
+  
+  dimensions=[1000,3000], /*  y = x*rows  */
+  
+  gr2d(points_joined =false,
+   title      = "Bifurcation diagram, z[i+1] = z[i]*z[i] +c",
+        xlabel     = "c parameter",
+        ylabel     = "z ",
+        xtics = tic,
+        yrange=[-1.5,0.7],
+        point_type = filled_circle,
+        point_size = 0.2,
+        color = black,
+        points(pts) 
+   ),
+
+  gr2d(title = " Lyapunov exponent ",
+   points_joined =true,
+   yaxis       = true,
+   xaxis 	= true,
+   xtics = tic,
+   xlabel     = "c parameter",
+   ylabel     = " lyapunov exponent ",
+   yrange = [-4,1], 
+   color         = red,
+   point_size    = 0.5,
+   point_type = filled_circle,
+   points(ls),
+   points_joined =false,
+   point_size    = 1.5,
+   color = black,
+   points(roots)),
+
+  gr2d(points_joined =false,
+   title      = "periods",
+        xlabel     = "c parameter",
+        ylabel     = "period ",
+yrange = [0,50],
+        xtics = tic,
+        point_type = filled_circle,
+        point_size = 0.2,
+        color = black,
+        points(periods) 
+   )
+
+ );
+
